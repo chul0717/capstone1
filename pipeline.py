@@ -127,7 +127,7 @@ def amenities(driver):
         button = driver.find_elements_by_xpath(f'//*[@id="wrap"]/div[3]/div/div[1]/div[3]/div/div/div[2]/div[1]/section[{idx}]/div[2]/a')
         driver.execute_script("arguments[0].click();", button[0])
     except:
-        print('no "show more" button: amenities')
+        pass
     
     # get amenities and create dictionary
     try:
@@ -150,7 +150,7 @@ def highlights(driver):
         button = driver.find_elements_by_xpath(f'//*[@id="wrap"]/div[3]/div/div[1]/div[3]/div/div/div[2]/div[1]/section[{idx}]/div[2]/a')
         driver.execute_script("arguments[0].click();", button[0])
     except:
-        print('no "show more" button or no section: highlights')
+        pass 
     try:    
         review_section = f'//*[@id="wrap"]/div[3]/div/div[1]/div[3]/div/div/div[2]/div[1]/section[{idx}]'
         review_tags = driver.find_element_by_xpath(review_section)
@@ -168,7 +168,7 @@ def about(driver):
         open_button = driver.find_elements_by_xpath(f'//*[@id="wrap"]/div[3]/div/div[1]/div[3]/div/div/div[2]/div[1]/section[{idx}]/div[2]/a')
         driver.execute_script("arguments[0].click();", open_button[0])
     except:
-        print('no "open" button: about')
+        pass
     try:
         pop_up = driver.find_elements_by_xpath(f'//*[@id="wrap"]/div[3]/div/div[1]/div[3]/div/div/div[2]/div[1]/section[{idx}]/div[2]/div[2]/div/div/div/div[2]/div/div[2]/div/div[2]/div/div/div/p')
         text = "".join([p.text for p in pop_up])
@@ -181,11 +181,10 @@ def about(driver):
 def drop_duplicates(links):
     return set(links)
 
-def scrape_page(url, chrome_options):
-    driver = webdriver.Chrome(chrome_options=chrome_options)
+def scrape_page(url, driver):
     driver.get(url)
     # captcha
-    if r.url.startswith('https://www.yelp.com/visit_captcha'):
+    if driver.current_url.startswith('https://www.yelp.com/visit_captcha'):
         print('DAMN YOU CAPTCHA!!!')
         if input('Solve problem and press "y" to continue \n') == 'y':
                 driver = webdriver.Chrome()
@@ -194,7 +193,6 @@ def scrape_page(url, chrome_options):
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     sections= section_idx(driver)
          
-
     document = {
     'name':store_name(soup),
     'ratings':star_rating(soup),
@@ -206,17 +204,19 @@ def scrape_page(url, chrome_options):
     'about_info':about(driver),
     'sections_list': sections
     }
-
-    driver.quit()
+    print(document)
+    
 
     return document
 
 def scrape_insert_db(master_list, table, chrome_options):
-    for store in master_list:
+    driver = webdriver.Chrome(options=chrome_options)
+    for i, store in enumerate(master_list):
         url = "https://www.yelp.com"+store
-        document = scrape_page(url, chrome_options)
+        document = scrape_page(url, driver)
         table.insert_one(document)
-        print('insert complete :)')
+        print('\ninsert complete :)')
+        print(f'count: {i} \n')
 
 
 # scrape cities from yelp.com/cities
@@ -275,11 +275,10 @@ def scrape_insert_db(master_list, table, chrome_options):
 #             if input('something happened..press "y" to cont \n') == 'y':
 #                 continue
 
-with open('master_list.txt', 'r') as f:
+with open('master_list_clean.txt', 'r') as f:
     master_list = [line.strip('\n') for line in f.readlines()]
 
-master_list = drop_duplicates(master_list)
-
+#master_list = master_list[100:] # checkpoint
 #headless chrome
 chrome_options = Options()
 chrome_options.add_argument("--headless")
@@ -288,9 +287,9 @@ chrome_options.add_argument("--window-size=1920x1080")
 # start mongo server
 local_client = MongoClient()
 db = local_client.yelp
-homepages2 = db.homepages2
+homepages4 = db.homepages4
 
 # for each store, scrape data and output dictionary
-scrape_insert_db(master_list, homepages2, chrome_options)
+scrape_insert_db(master_list, homepages4, chrome_options)
 
 local_client.close()
