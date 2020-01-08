@@ -65,12 +65,15 @@ def scrape_stores(r, limit):
     return all_links 
 
 # refactored methods
-def section_idx(section_name, driver):
+def section_idx(driver, section_name=None):
     soup = BeautifulSoup(driver.page_source, 'html.parser')
     main_div = soup.find('div', class_="lemon--div__373c0__1mboc stickySidebar--heightContext__373c0__133M8 tableLayoutFixed__373c0__12cEm arrange__373c0__UHqhV u-space-b6 u-padding-b4 border--bottom__373c0__uPbXS border-color--default__373c0__2oFDT")
     section_tags = main_div.find('div').find_all('section')
     section_names = [tag.find('div').find('div').text for tag in section_tags]
-    return (section_names.index(section_name)+1, section_names)
+    if section_name:
+        return (section_names.index(section_name)+1, section_names)
+    else: 
+        return section_names
     
 def store_name(soup):
     try:
@@ -119,7 +122,7 @@ def clean_string(string):
 # grab amenities data using selenium
 def amenities(driver):
     try:
-        idx, _ = section_idx('Amenities', driver)
+        idx, _ = section_idx(driver, 'Amenities')
         # click "show more" to reveal hidden html
         button = driver.find_elements_by_xpath(f'//*[@id="wrap"]/div[3]/div/div[1]/div[3]/div/div/div[2]/div[1]/section[{idx}]/div[2]/a')
         driver.execute_script("arguments[0].click();", button[0])
@@ -143,7 +146,7 @@ def amenities(driver):
 
 def highlights(driver):
     try:
-        idx, _ = section_idx('Review Highlights', driver) #find which section number
+        idx, _ = section_idx(driver, 'Review Highlights') #find which section number
         button = driver.find_elements_by_xpath(f'//*[@id="wrap"]/div[3]/div/div[1]/div[3]/div/div/div[2]/div[1]/section[{idx}]/div[2]/a')
         driver.execute_script("arguments[0].click();", button[0])
     except:
@@ -161,7 +164,7 @@ def highlights(driver):
 
 def about(driver):
     try:
-        idx, _ = section_idx('About the Business', driver)
+        idx, _ = section_idx(driver, 'About the Business')
         open_button = driver.find_elements_by_xpath(f'//*[@id="wrap"]/div[3]/div/div[1]/div[3]/div/div/div[2]/div[1]/section[{idx}]/div[2]/a')
         driver.execute_script("arguments[0].click();", open_button[0])
     except:
@@ -178,10 +181,19 @@ def about(driver):
 def drop_duplicates(links):
     return set(links)
 
-def scrape_page(url):
-    driver = webdriver.Chrome()
+def scrape_page(url, chrome_options):
+    driver = webdriver.Chrome(chrome_options=chrome_options)
     driver.get(url)
+    # captcha
+    if r.url.startswith('https://www.yelp.com/visit_captcha'):
+        print('DAMN YOU CAPTCHA!!!')
+        if input('Solve problem and press "y" to continue \n') == 'y':
+                driver = webdriver.Chrome()
+                driver.get(url)
+
     soup = BeautifulSoup(driver.page_source, 'html.parser')
+    sections= section_idx(driver)
+         
 
     document = {
     'name':store_name(soup),
@@ -192,16 +204,17 @@ def scrape_page(url):
     'amenities_dict':amenities(driver),
     'highlight_revs':highlights(driver),
     'about_info':about(driver),
+    'sections_list': sections
     }
 
     driver.quit()
 
     return document
 
-def scrape_insert_db(master_list, table):
+def scrape_insert_db(master_list, table, chrome_options):
     for store in master_list:
         url = "https://www.yelp.com"+store
-        document = scrape_page(url)
+        document = scrape_page(url, chrome_options)
         table.insert_one(document)
         print('insert complete :)')
 
@@ -211,69 +224,73 @@ def scrape_insert_db(master_list, table):
 #r = get_requests(url)
 #city_links = scrape_cities(r)
 
-city_links = [#'anaheim-ca-us', 
-              'bakersfield', 
-              'berkeley', 
-              'chula-vista-ca-us', 
-              'concord-ca-us', 
-              'davis', 
-              'elk-grove-ca-us', 
-              'escondido-ca-us', 
-              'fairfield-ca-us', 
-              'fullerton-ca-us', 
-              'hollywood-ca-us', 
-              'lancaster-ca-us', 
-              'la', 
-              'modesto-ca-us', 
-              'moreno-valley-ca-us', 
-              'oakland', 
-              'north-county-san-diego', 
-              'pasadena-ca-us', 
-              'rancho-cucamonga-ca-us', 
-              'richmond-ca-us', 
-              'riverside-ca-us', 
-              'roseville-ca-us', 
-              'sacramento', 
-              'san-bernardino-ca-us', 
-              'san-diego', 
-              'sf', 
-              'san-jose', 
-              'santa-ana-ca-us',
-              'santa-clarita-ca-us', 
-              'simi-valley-ca-us', 
-              'sunnyvale-ca-us', 
-              'torrance-ca-us', 
-              'west-covina-ca-us']
+# city_links = [#'anaheim-ca-us', 
+#               'bakersfield', 
+#               'berkeley', 
+#               'chula-vista-ca-us', 
+#               'concord-ca-us', 
+#               'davis', 
+#               'elk-grove-ca-us', 
+#               'escondido-ca-us', 
+#               'fairfield-ca-us', 
+#               'fullerton-ca-us', 
+#               'hollywood-ca-us', 
+#               'lancaster-ca-us', 
+#               'la', 
+#               'modesto-ca-us', 
+#               'moreno-valley-ca-us', 
+#               'oakland', 
+#               'north-county-san-diego', 
+#               'pasadena-ca-us', 
+#               'rancho-cucamonga-ca-us', 
+#               'richmond-ca-us', 
+#               'riverside-ca-us', 
+#               'roseville-ca-us', 
+#               'sacramento', 
+#               'san-bernardino-ca-us', 
+#               'san-diego', 
+#               'sf', 
+#               'san-jose', 
+#               'santa-ana-ca-us',
+#               'santa-clarita-ca-us', 
+#               'simi-valley-ca-us', 
+#               'sunnyvale-ca-us', 
+#               'torrance-ca-us', 
+#               'west-covina-ca-us']
 
 # for each city, search all three parameters and scrape store links
-master_list = []
-for city in city_links:
-    for sortby in ['rating', 'review_count', 'recommended']:
-        try:
-            url = f"https://www.yelp.com/search?find_desc=Coffee%20%26%20Tea&find_loc={city}&sortby={sortby}"
-            r = get_requests(url)
-            if r.url.startswith('https://www.yelp.com/visit_captcha'):
-                print('DAMN YOU CAPTCHA!!!')
-                if input('Solve problem and press "y" to continue \n') == 'y':
-                    continue           
-            store_links = scrape_stores(r, 1000)
-            master_list.extend(store_links)
-        except:
-            if input('something happened..press "y" to cont \n') == 'y':
-                continue
+# master_list = []
+# for city in city_links:
+#     for sortby in ['rating', 'review_count', 'recommended']:
+#         try:
+#             url = f"https://www.yelp.com/search?find_desc=Coffee%20%26%20Tea&find_loc={city}&sortby={sortby}"
+#             r = get_requests(url)
+#             if r.url.startswith('https://www.yelp.com/visit_captcha'):
+#                 print('DAMN YOU CAPTCHA!!!')
+#                 if input('Solve problem and press "y" to continue \n') == 'y':
+#                     continue           
+#             store_links = scrape_stores(r, 1000)
+#             master_list.extend(store_links)
+#         except:
+#             if input('something happened..press "y" to cont \n') == 'y':
+#                 continue
 
 with open('master_list.txt', 'r') as f:
     master_list = [line.strip('\n') for line in f.readlines()]
 
 master_list = drop_duplicates(master_list)
 
+#headless chrome
+chrome_options = Options()
+chrome_options.add_argument("--headless")
+chrome_options.add_argument("--window-size=1920x1080")
 
 # start mongo server
-
 local_client = MongoClient()
 db = local_client.yelp
-homepages = db.homepages
+homepages2 = db.homepages2
+
 # for each store, scrape data and output dictionary
-scrape_insert_db(master_list, homepages)
+scrape_insert_db(master_list, homepages2, chrome_options)
 
 local_client.close()
