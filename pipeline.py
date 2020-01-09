@@ -219,7 +219,6 @@ def scrape_insert_db(master_list, table, chrome_options):
             print('\ninsert complete :)')
             print(f'count: {i} \n')
         except: 
-            continue 
             print('\ninsert fail :(')
             print(f'count: {i} \n')
 
