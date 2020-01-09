@@ -283,7 +283,7 @@ def scrape_insert_db(master_list, table, chrome_options):
 with open('master_list_clean.txt', 'r') as f:
     master_list = [line.strip('\n') for line in f.readlines()]
 
-master_list = master_list[5004:] # checkpoint
+master_list = master_list[6328:] # checkpoint
 #headless chrome
 chrome_options = Options()
 chrome_options.add_argument("--headless")
