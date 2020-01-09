@@ -213,10 +213,15 @@ def scrape_insert_db(master_list, table, chrome_options):
     driver = webdriver.Chrome(options=chrome_options)
     for i, store in enumerate(master_list):
         url = "https://www.yelp.com"+store
-        document = scrape_page(url, driver)
-        table.insert_one(document)
-        print('\ninsert complete :)')
-        print(f'count: {i} \n')
+        try:
+            document = scrape_page(url, driver)
+            table.insert_one(document)
+            print('\ninsert complete :)')
+            print(f'count: {i} \n')
+        except: 
+            continue 
+            print('\ninsert fail :(')
+            print(f'count: {i} \n')
 
 
 # scrape cities from yelp.com/cities
@@ -278,7 +283,7 @@ def scrape_insert_db(master_list, table, chrome_options):
 with open('master_list_clean.txt', 'r') as f:
     master_list = [line.strip('\n') for line in f.readlines()]
 
-#master_list = master_list[100:] # checkpoint
+master_list = master_list[4922:] # checkpoint
 #headless chrome
 chrome_options = Options()
 chrome_options.add_argument("--headless")
@@ -290,6 +295,7 @@ db = local_client.yelp
 homepages4 = db.homepages4
 
 # for each store, scrape data and output dictionary
+
 scrape_insert_db(master_list, homepages4, chrome_options)
 
 local_client.close()
