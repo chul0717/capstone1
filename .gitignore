@@ -4,3 +4,4 @@ test.py
 geckodriver.log
 recover
 .ipynb_checkpoints/
+data/
