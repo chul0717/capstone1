@@ -9,7 +9,7 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 
 # Get request object and check for status
-def get_requests(url):   
+def get_requests(url):
     """
     Parameters
     ----------
@@ -17,7 +17,7 @@ def get_requests(url):
     Returns
     -------
     
-    """  
+    """    
     r = requests.get(url)
     try:
         r.raise_for_status()
@@ -287,10 +287,10 @@ def scrape_insert_db(master_list, table, chrome_options):
 #             if input('something happened..press "y" to cont \n') == 'y':
 #                 continue
 
-with open('master_list_clean.txt', 'r') as f:
+with open('data/master_list_clean.txt', 'r') as f:
     master_list = [line.strip('\n') for line in f.readlines()]
 
-master_list = master_list[6328:] # checkpoint
+master_list = master_list[10500:] # checkpoint
 #headless chrome
 chrome_options = Options()
 chrome_options.add_argument("--headless")
