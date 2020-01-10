@@ -5,3 +5,4 @@ geckodriver.log
 recover
 .ipynb_checkpoints/
 data/
+*.pptx
